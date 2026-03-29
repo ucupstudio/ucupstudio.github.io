@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multi-Server Drive Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="app" v-cloak>
+        <div v-if="!isLoggedIn" id="login-container">
+            </div>
+
+        <div v-else class="flex">
+            <aside class="w-64 h-screen bg-slate-800 text-white" v-html="templates.sidebar"></aside>
+
+            <div class="flex-1">
+                <header class="h-16 bg-white shadow-sm flex items-center px-6" v-html="templates.header"></header>
+
+                <main class="p-6">
+                    <div class="mb-4">
+                        <label>Pilih Server:</label>
+                        <select v-model="activeServer" class="border p-1 rounded">
+                            <option v-for="srv in servers" :key="srv.id" :value="srv.apiUrl">
+                                {{ srv.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <section id="content-area">
+                        <div v-if="currentTab === 'video'" id="video-module"></div>
+                        <div v-if="currentTab === 'foto'" id="foto-module"></div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const isLoggedIn = ref(false);
+                const currentTab = ref('video'); // default tab
+                const activeServer = ref(''); // API URL yang aktif
+                const templates = ref({ header: '', sidebar: '' });
+                const servers = ref([]); // Isi dari servers.js nanti
+
+                // Fungsi untuk memuat potongan HTML (Partial)
+                const loadPartial = async (url, targetId) => {
+                    const res = await fetch(url);
+                    const html = await res.text();
+                    if(targetId) document.getElementById(targetId).innerHTML = html;
+                    return html;
+                };
+
+                onMounted(async () => {
+                    // 1. Cek Login
+                    if(localStorage.getItem('session_token')) {
+                        isLoggedIn.value = true;
+                        // 2. Load Templates jika sudah login
+                        templates.value.header = await loadPartial('templates/header.html');
+                        templates.value.sidebar = await loadPartial('templates/sidebar.html');
+                        // 3. Load Default Content
+                        await loadPartial('content/video/video-list.html', 'video-module');
+                    } else {
+                        await loadPartial('login/login-form.html', 'login-container');
+                    }
+                });
+
+                return { isLoggedIn, currentTab, servers, activeServer, templates };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
