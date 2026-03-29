@@ -1,0 +1,25 @@
+<div class="flex items-center justify-center min-h-[80vh]">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-extrabold text-gray-800">Welcome Back</h2>
+            <p class="text-gray-500 mt-2">Silahkan login ke Panel Arsitek</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="userInp" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Username anda..." required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="passInp" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition">
+                    Sign In
+                </button>
+            </div>
+        </form>
+        <div id="loginMsg" class="mt-4 text-center text-sm font-medium"></div>
+    </div>
+</div>
