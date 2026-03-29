@@ -6,7 +6,7 @@ const APP_CONFIG = {
         "1": { name: "Server 1 (Default)", uploadUrl: "URL_GAS_AKUN_1_JIKA_ADA" },
         "2": { 
             name: "Server 2 (Media)", 
-            uploadUrl: "https://script.google.com/macros/s/AKfycbz82CdCRvIN0oFdkpUWhHpxSa7EUXKj_5SrXw2-wGTL6Inj7geMfd-0_ZUpy8g4H_mxSg/exec" 
+            uploadUrl: "https://script.google.com/macros/s/AKfycbwQpacCRCKAnrUmNDan4R8PdMdEzo2mYZJsrMWdxcK5hd9SHzbRm-e57bQTN7Q-IXpybQ/exec" 
         }
     }
 };
