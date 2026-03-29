@@ -146,14 +146,15 @@ const CHILD_SERVER_2 = "https://script.google.com/macros/s/AKfycbwQpacCRCKAnrUmN
                             
                             // Langkah 1: Kirim ke Server Anak (Penyimpanan)
                             // Catatan: Server Anak kita sekarang otomatis lapor ke Induk di backend
+                            // Di dalam handleUpload index.html, pastikan body JSON seperti ini:
                             const resAnak = await fetch(CHILD_SERVER_2, { 
                                 method: 'POST', 
                                 body: JSON.stringify({ 
                                     action: 'upload', 
                                     secret: SECRET, 
                                     title: newFile.value.title,
-                                    type: fileType, // Kirim tipe file
-                                    serverId: newFile.value.serverId,
+                                    type: selectedFile.value.type.includes('image') ? 'image' : 'video', // DETEKSI DISINI
+                                    serverId: "2",
                                     fileName: selectedFile.value.name, 
                                     mimeType: selectedFile.value.type, 
                                     fileContent: base64 
