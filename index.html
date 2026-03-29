@@ -10,52 +10,76 @@
 <body class="bg-slate-100 min-h-screen">
     <div id="app" v-cloak>
         <div v-if="!isLoggedIn" class="flex items-center justify-center h-screen">
-            <div class="bg-white p-8 rounded-xl shadow-lg w-96">
+            <div class="bg-white p-8 rounded-xl shadow-lg w-96 border-t-4 border-blue-600">
                 <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Video Manager</h1>
-                <input v-model="loginForm.user" type="text" placeholder="Username" class="w-full border p-2 mb-4 rounded">
-                <input v-model="loginForm.pass" type="password" placeholder="Password" class="w-full border p-2 mb-6 rounded">
-                <button @click="doLogin" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded font-bold">
-                    {{ loading ? 'Processing...' : 'LOGIN' }}
+                <input v-model="loginForm.user" type="text" placeholder="Username" class="w-full border p-2 mb-4 rounded focus:ring-2 focus:ring-blue-400 outline-none">
+                <input v-model="loginForm.pass" type="password" placeholder="Password" class="w-full border p-2 mb-6 rounded focus:ring-2 focus:ring-blue-400 outline-none">
+                <button @click="doLogin" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold transition">
+                    {{ loading ? 'Authenticating...' : 'LOGIN' }}
                 </button>
             </div>
         </div>
 
         <div v-else>
-            <nav class="bg-white shadow-sm p-4 flex justify-between items-center">
-                <h2 class="font-bold text-slate-700">My Video Cloud</h2>
+            <nav class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
+                <h2 class="font-bold text-slate-700 flex items-center gap-2">
+                    <span class="bg-blue-600 text-white p-1 rounded">V</span> My Cloud Drive
+                </h2>
                 <div class="flex gap-4 items-center">
-                    <button @click="showUpload = true" class="bg-green-600 text-white px-4 py-1 rounded text-sm">+ Upload</button>
-                    <button @click="logout" class="text-red-500 text-sm">Logout</button>
+                    <button @click="showUpload = true" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-sm">+ Upload</button>
+                    <button @click="logout" class="text-red-500 hover:text-red-700 text-sm font-medium">Logout</button>
                 </div>
             </nav>
 
-            <main class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div v-for="item in mediaList" :key="item.id" class="bg-white rounded-lg shadow overflow-hidden">
-                        <video controls class="w-full aspect-video bg-black">
-                            <source :src="`https://drive.google.com/uc?export=download&id=${item.file_id}`" type="video/mp4">
-                        </video>
-                        <div class="p-3">
-                            <p class="font-bold truncate">{{ item.title }}</p>
-                            <p class="text-[10px] text-gray-400">Server: {{ item.server_id }} | {{ item.created_at }}</p>
+            <main class="p-6 max-w-7xl mx-auto">
+                <div class="flex space-x-2 mb-8 bg-gray-200 p-1 rounded-xl w-fit">
+                    <button @click="currentTab = 'video'" :class="currentTab === 'video' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-100'" class="px-6 py-2 rounded-lg font-bold transition text-sm">Videos</button>
+                    <button @click="currentTab = 'image'" :class="currentTab === 'image' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-100'" class="px-6 py-2 rounded-lg font-bold transition text-sm">Photos</button>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="item in filteredMedia" :key="item.id" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="relative group">
+                            <video v-if="item.type === 'video'" controls class="w-full aspect-video bg-black">
+                                <source :src="`https://drive.google.com/uc?export=download&id=${item.file_id}`" type="video/mp4">
+                            </video>
+                            <img v-else :src="`https://drive.google.com/uc?export=view&id=${item.file_id}`" class="w-full aspect-video object-cover bg-gray-200" loading="lazy">
+                        </div>
+                        
+                        <div class="p-4">
+                            <h4 class="font-bold text-gray-800 truncate mb-1">{{ item.title }}</h4>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono uppercase">Server {{ item.server_id }}</span>
+                                <p class="text-[10px] text-gray-400 italic">{{ item.created_at }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <div v-if="filteredMedia.length === 0" class="text-center py-20 text-gray-400">
+                    <p class="text-lg italic">Belum ada file di kategori ini.</p>
+                </div>
             </main>
 
-            <div v-if="showUpload" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
-                <div class="bg-white p-6 rounded-xl w-full max-w-md">
-                    <h3 class="text-lg font-bold mb-4">Upload ke Server Penyimpanan</h3>
-                    <input v-model="newFile.title" type="text" placeholder="Judul Video" class="w-full border p-2 mb-4 rounded">
-                    <select v-model="newFile.serverId" class="w-full border p-2 mb-4 rounded">
-                        <option value="2">Server 2 (Akun Anak)</option>
-                    </select>
-                    <input type="file" @change="e => selectedFile = e.target.files[0]" class="mb-6 block w-full text-sm">
+            <div v-if="showUpload" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Upload ke Cloud</h3>
+                    <div class="space-y-4">
+                        <input v-model="newFile.title" type="text" placeholder="Berikan Judul..." class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                        
+                        <div class="p-4 border-2 border-dashed border-gray-200 rounded-lg">
+                             <input type="file" @change="e => selectedFile = e.target.files[0]" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        
+                        <select v-model="newFile.serverId" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50 outline-none">
+                            <option value="2">Server 2 (Akun Anak)</option>
+                        </select>
+                    </div>
                     
-                    <div class="flex justify-end gap-2">
-                        <button @click="showUpload = false" class="px-4 py-2">Batal</button>
-                        <button @click="handleUpload" :disabled="loading" class="bg-blue-600 text-white px-6 py-2 rounded">
-                            {{ loading ? 'Uploading...' : 'Mulai Simpan' }}
+                    <div class="flex justify-end gap-3 mt-8">
+                        <button @click="showUpload = false" class="px-4 py-2 text-gray-500 font-medium hover:text-gray-800">Batal</button>
+                        <button @click="handleUpload" :disabled="loading" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg shadow-blue-200 disabled:bg-gray-400 transition">
+                            {{ loading ? 'Mengunggah...' : 'Simpan ke Drive' }}
                         </button>
                     </div>
                 </div>
@@ -64,7 +88,7 @@
     </div>
 
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted } = Vue;
         const MAIN_API = "https://script.google.com/macros/s/AKfycbztTfrsbeJ_QveesN8Hov23WwHOr3Tee4FwIHtF-yrnlxxDSjFImTHdWQGXffMfpEdtzQ/exec";
         const CHILD_SERVER_2 = "https://script.google.com/macros/s/AKfycbz82CdCRvIN0oFdkpUWhHpxSa7EUXKj_5SrXw2-wGTL6Inj7geMfd-0_ZUpy8g4H_mxSg/exec";
         const SECRET = "3fb8f44a-71d5-4e1b-9a2c-9f6b3e8e7a10";
@@ -74,56 +98,95 @@
                 const isLoggedIn = ref(!!localStorage.getItem('user_session'));
                 const loading = ref(false);
                 const showUpload = ref(false);
+                const currentTab = ref('video'); // Tambahkan state Tab
                 const mediaList = ref([]);
                 const loginForm = ref({ user: '', pass: '' });
                 const newFile = ref({ title: '', serverId: '2' });
                 const selectedFile = ref(null);
 
+                // LOGIKA FILTER: Memisahkan video dan foto di tampilan
+                const filteredMedia = computed(() => {
+                    return mediaList.value.filter(item => item.type === currentTab.value);
+                });
+
                 const fetchVideos = async () => {
-                    const res = await fetch(MAIN_API, { method: 'POST', body: JSON.stringify({ action: 'getMedia', secret: SECRET })});
-                    const json = await res.json();
-                    if(json.status === 'success') mediaList.value = json.data;
+                    try {
+                        const res = await fetch(MAIN_API, { method: 'POST', body: JSON.stringify({ action: 'getMedia', secret: SECRET })});
+                        const json = await res.json();
+                        if(json.status === 'success') mediaList.value = json.data;
+                    } catch (e) { console.error("Gagal mengambil data"); }
                 };
 
                 const doLogin = async () => {
                     loading.value = true;
-                    const res = await fetch(MAIN_API, { method: 'POST', body: JSON.stringify({ action: 'login', user: loginForm.value.user, pass: loginForm.value.pass, secret: SECRET })});
-                    const json = await res.json();
-                    if(json.status === 'success') {
-                        localStorage.setItem('user_session', 'true');
-                        isLoggedIn.value = true;
-                        fetchVideos();
-                    } else { alert(json.message); }
+                    try {
+                        const res = await fetch(MAIN_API, { method: 'POST', body: JSON.stringify({ action: 'login', user: loginForm.value.user, pass: loginForm.value.pass, secret: SECRET })});
+                        const json = await res.json();
+                        if(json.status === 'success') {
+                            localStorage.setItem('user_session', 'true');
+                            isLoggedIn.value = true;
+                            fetchVideos();
+                        } else { alert(json.message); }
+                    } catch (e) { alert("Error koneksi!"); }
                     loading.value = false;
                 };
 
                 const handleUpload = async () => {
-                    if(!selectedFile.value) return;
+                    if(!selectedFile.value || !newFile.value.title) return alert("Pilih file dan isi judul!");
                     loading.value = true;
+                    
+                    // Deteksi Otomatis Tipe File
+                    const fileType = selectedFile.value.type.includes('image') ? 'image' : 'video';
                     
                     const reader = new FileReader();
                     reader.readAsDataURL(selectedFile.value);
                     reader.onload = async () => {
-                        const base64 = reader.result.split(',')[1];
-                        // 1. Upload ke Server 2
-                        const resAnak = await fetch(CHILD_SERVER_2, { method: 'POST', body: JSON.stringify({ action: 'upload', secret: SECRET, fileName: selectedFile.value.name, mimeType: selectedFile.value.type, fileContent: base64 })});
-                        const dataAnak = await resAnak.json();
+                        try {
+                            const base64 = reader.result.split(',')[1];
+                            
+                            // Langkah 1: Kirim ke Server Anak (Penyimpanan)
+                            // Catatan: Server Anak kita sekarang otomatis lapor ke Induk di backend
+                            const resAnak = await fetch(CHILD_SERVER_2, { 
+                                method: 'POST', 
+                                body: JSON.stringify({ 
+                                    action: 'upload', 
+                                    secret: SECRET, 
+                                    title: newFile.value.title,
+                                    type: fileType, // Kirim tipe file
+                                    serverId: newFile.value.serverId,
+                                    fileName: selectedFile.value.name, 
+                                    mimeType: selectedFile.value.type, 
+                                    fileContent: base64 
+                                })
+                            });
+                            
+                            const dataAnak = await resAnak.json();
 
-                        if(dataAnak.status === 'success') {
-                            // 2. Catat ke Server Induk
-                            await fetch(MAIN_API, { method: 'POST', body: JSON.stringify({ action: 'create', secret: SECRET, title: newFile.value.title, type: 'video', file_id: dataAnak.file_id, server_id: newFile.value.serverId, created_at: new Date().toLocaleString() })});
-                            alert("Selesai!");
-                            showUpload.value = false;
-                            fetchVideos();
+                            if(dataAnak.status === 'success') {
+                                alert("File berhasil disimpan dan dicatat!");
+                                showUpload.value = false;
+                                newFile.value.title = "";
+                                selectedFile.value = null;
+                                fetchVideos(); // Refresh tampilan
+                            } else {
+                                alert("Gagal di Server Anak: " + dataAnak.message);
+                            }
+                        } catch (e) {
+                            alert("Terjadi kesalahan sistem saat upload.");
+                        } finally {
+                            loading.value = false;
                         }
-                        loading.value = false;
                     };
                 };
 
                 const logout = () => { localStorage.clear(); location.reload(); };
                 onMounted(() => { if(isLoggedIn.value) fetchVideos(); });
 
-                return { isLoggedIn, loading, showUpload, mediaList, loginForm, newFile, selectedFile, doLogin, handleUpload, logout };
+                return { 
+                    isLoggedIn, loading, showUpload, mediaList, 
+                    currentTab, filteredMedia, loginForm, 
+                    newFile, selectedFile, doLogin, handleUpload, logout 
+                };
             }
         }).mount('#app');
     </script>
